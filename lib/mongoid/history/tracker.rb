@@ -107,7 +107,7 @@ module Mongoid
         @tracked_edits ||= tracked_changes.inject(HashWithIndifferentAccess.new) do |h, (k, v)|
           unless v[:from].blank? && v[:to].blank?
             if trackable_parent_class.tracked_embedded_many?(k)
-              h[:array] ||= {}
+              h[:embeds_many] ||= {}
               v[:from] ||= []
               v[:to] ||= []
               modify_ids = v[:from].map{|vv| vv['_id']}.compact & v[:to].map{|vv| vv['_id']}.compact
@@ -116,7 +116,7 @@ module Mongoid
               ignore_values = modify_values.map{|vv| [vv[:from], vv[:to]]}.flatten
               old_values = v[:from] - v[:to] - ignore_values
               new_values = v[:to] - v[:from] - ignore_values
-              h[:array][k] = { add: new_values, remove: old_values, modify: modify_values }.delete_if {|_, vv| vv.blank? }
+              h[:embeds_many][k] = { add: new_values, remove: old_values, modify: modify_values }.delete_if {|_, vv| vv.blank? }
             elsif v[:from].blank?
               h[:add] ||= {}
               h[:add][k] = v[:to]

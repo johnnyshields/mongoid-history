@@ -190,7 +190,19 @@ module Mongoid
         end
 
         def modified_attributes_for_update
-          @modified_attributes_for_update ||= send(history_trackable_options[:changes_method]).select { |k, _| self.class.tracked?(k, :update) }
+          return @modified_attributes_for_update if @modified_attributes_for_update
+          changes = send(history_trackable_options[:changes_method])
+          attrs  = {}
+          changes.each do |k, v|
+            if self.class.tracked_embedded_many?(k)
+              attrs[k] = []
+              attrs[k][0] = v[0].reject { |rel| rel['deleted_at'].present? }
+              attrs[k][1] = v[1].reject { |rel| rel['deleted_at'].present? }
+            elsif self.class.tracked?(k, :update)
+              attrs[k] = v
+            end
+          end
+          @modified_attributes_for_update = attrs
         end
 
         def modified_attributes_for_create
@@ -208,7 +220,11 @@ module Mongoid
 
           self.class.tracked_embedded_many
             .map { |rel| aliased_fields.key(rel) || rel }
-            .each { |rel| attrs[rel] = [nil, send(rel).map(&:attributes)] }
+            .each do |rel|
+              attrs[rel] = [nil, send(rel)
+                .reject { |obj| obj.respond_to?(:deleted?) && obj.deleted? }
+                .map(&:attributes)]
+            end
 
           @modified_attributes_for_create = attrs
         end

@@ -201,10 +201,16 @@ module Mongoid
           changes = send(history_trackable_options[:changes_method])
           attrs  = {}
           changes.each do |k, v|
-            if self.class.tracked_embedded_many?(k)
+            if self.class.tracked_embedded_one?(k)
+              permitted_attrs = self.class.tracked_embeds_one_attributes(k)
               attrs[k] = []
-              attrs[k][0] = v[0].reject { |rel| rel['deleted_at'].present? }
-              attrs[k][1] = v[1].reject { |rel| rel['deleted_at'].present? }
+              attrs[k][0] = v[0].slice(*permitted_attrs)
+              attrs[k][1] = v[1].slice(*permitted_attrs)
+            elsif self.class.tracked_embedded_many?(k)
+              permitted_attrs = self.class.tracked_embeds_many_attributes(k)
+              attrs[k] = []
+              attrs[k][0] = v[0].reject { |rel| rel['deleted_at'].present? }.map { |v_attrs| v_attrs.slice(*permitted_attrs) }
+              attrs[k][1] = v[1].reject { |rel| rel['deleted_at'].present? }.map { |v_attrs| v_attrs.slice(*permitted_attrs) }
             elsif self.class.tracked?(k, :update)
               attrs[k] = v
             end
@@ -221,16 +227,18 @@ module Mongoid
           self.class.tracked_embedded_one
             .map { |rel| aliased_fields.key(rel) || rel }
             .each do |rel|
+              permitted_attrs = self.class.tracked_embeds_one_attributes(rel)
               obj = send(rel)
-              attrs[rel] = [nil, obj.attributes] if obj
+              attrs[rel] = [nil, obj.attributes.slice(*permitted_attrs)] if obj
             end
 
           self.class.tracked_embedded_many
             .map { |rel| aliased_fields.key(rel) || rel }
             .each do |rel|
+              permitted_attrs = self.class.tracked_embeds_many_attributes(rel)
               attrs[rel] = [nil, send(rel)
                 .reject { |obj| obj.respond_to?(:deleted?) && obj.deleted? }
-                .map(&:attributes)]
+                .map { |obj| obj.attributes.slice(*permitted_attrs) }]
             end
 
           @modified_attributes_for_create = attrs
@@ -245,13 +253,19 @@ module Mongoid
           self.class.tracked_embedded_one
             .map { |rel| aliased_fields.key(rel) || rel }
             .each do |rel|
+              permitted_attrs = self.class.tracked_embeds_one_attributes(rel)
               obj = send(rel)
-              attrs[rel] = [obj.attributes, nil] if obj
+              attrs[rel] = [obj.attributes.slice(*permitted_attrs), nil] if obj
             end
 
           self.class.tracked_embedded_many
             .map { |rel| aliased_fields.key(rel) || rel }
-            .each { |rel| attrs[rel] = [send(rel).map(&:attributes), nil] }
+            .each do |rel|
+              permitted_attrs = self.class.tracked_embeds_many_attributes(rel)
+              attrs[rel] = [send(rel)
+                            .reject { |obj| obj.respond_to?(:deleted?) && obj.deleted? }
+                            .map { |obj| obj.attributes.slice(*permitted_attrs) }, nil]
+            end
 
           @modified_attributes_for_destroy = attrs
         end
@@ -480,6 +494,10 @@ module Mongoid
           end
         end
 
+        def tracked_embeds_one_attributes(relation)
+          history_trackable_options[:relations][:embeds_one][database_field_name(relation)]
+        end
+
         # Whether or not the embeds_many relation should be tracked.
         #
         # @param [ String | Symbol ] relation The name of the embeds_many relation
@@ -498,6 +516,10 @@ module Mongoid
             .map(&:key)
             .select { |rel| history_trackable_options[:relations][:embeds_many].include? rel }
           end
+        end
+
+        def tracked_embeds_many_attributes(relation)
+          history_trackable_options[:relations][:embeds_many][database_field_name(relation)]
         end
 
         def history_trackable_options

@@ -41,9 +41,9 @@ describe Mongoid::History::Trackable do
         version_field: :version,
         changes_method: :changes,
         scope: :my_model,
-        track_create: false,
+        track_create: true,
         track_update: true,
-        track_destroy: false,
+        track_destroy: true,
         fields: %w[foo],
         relations: { embeds_one: {}, embeds_many: {} },
         dynamic: [],
@@ -559,6 +559,7 @@ describe Mongoid::History::Trackable do
       describe 'fields' do
         context 'when custom method for changes' do
           before(:each) do
+            ModelOne.clear_trackable_memoization
             ModelOne.track_history(on: :foo, changes_method: :my_changes_method)
             allow(ModelOne).to receive(:dynamic_enabled?) { false }
             allow(model_one).to receive(:my_changes_method) { changes }
@@ -593,6 +594,7 @@ describe Mongoid::History::Trackable do
     let(:m) { MyModel.create!(foo: 'bar') }
 
     it 'should create history' do
+      m   # Created
       expect { m.update_attributes!(foo: 'bar2') }.to change(Tracker, :count).by(1)
     end
 
@@ -613,6 +615,7 @@ describe Mongoid::History::Trackable do
     let(:m) { MyModel.create!(foo: 'bar') }
 
     it 'should create history' do
+      m   # Created
       expect { m.destroy }.to change(Tracker, :count).by(1)
     end
 

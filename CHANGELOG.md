@@ -1,7 +1,8 @@
-### 0.7.1 (Next)
+### 0.8.0 (Next)
 
 * [#208](https://github.com/mongoid/mongoid-history/pull/208): Fix: history tracks fields declared after `track_history` - [@mikwat](https://github.com/mikwat).
 * [#210](https://github.com/mongoid/mongoid-history/pull/210): Do not track unmodified embedded relations - [@jagdeepsingh](https://github.com/jagdeepsingh).
+* [#211](https://github.com/mongoid/mongoid-history/pull/211): BREAKING CHANGE - Enable tracking create/destroy by default - [@jagdeepsingh](https://github.com/jagdeepsingh).
 * [#212](https://github.com/mongoid/mongoid-history/pull/212): `track_history` method support for `:if` and `:unless` options - [@jagdeepsingh](https://github.com/jagdeepsingh).
 * Your contribution here.
 

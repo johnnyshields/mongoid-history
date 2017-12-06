@@ -2,6 +2,7 @@
 
 * [#208](https://github.com/mongoid/mongoid-history/pull/208): Fix: history tracks fields declared after `track_history` - [@mikwat](https://github.com/mikwat).
 * [#210](https://github.com/mongoid/mongoid-history/pull/210): Do not track unmodified embedded relations - [@jagdeepsingh](https://github.com/jagdeepsingh).
+* [#212](https://github.com/mongoid/mongoid-history/pull/212): `track_history` method support for `:if` and `:unless` options - [@jagdeepsingh](https://github.com/jagdeepsingh).
 * Your contribution here.
 
 ### 0.7.0 (2017/11/14)
